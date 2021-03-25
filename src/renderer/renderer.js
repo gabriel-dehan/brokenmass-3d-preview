@@ -309,7 +309,7 @@ export default class {
 
     function animate() {
       requestAnimationFrame(animate);
-      render();
+      renderScene();
     }
 
     const raycaster = new THREE.Raycaster();
@@ -320,6 +320,7 @@ export default class {
       Points: {threshold: 1},
       Sprite: {},
     };
+
     const mouse = new THREE.Vector2();
     let lastMousePosition;
     function onMouseMove(event) {
@@ -342,7 +343,7 @@ export default class {
 
     var selected;
     var tooltip = tooltipContainer;
-    function render() {
+    function renderScene() {
       // update the picking ray with the camera and mouse position
       raycaster.setFromCamera(mouse, camera);
 
