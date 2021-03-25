@@ -54,6 +54,14 @@ export default class {
     } = this;
 
     const mouse = new THREE.Vector2();
+    const raycaster = new THREE.Raycaster();
+    raycaster.params = {
+      Mesh: {threshold: 0.5},
+      Line: {threshold: 1},
+      LOD: {},
+      Points: {threshold: 1},
+      Sprite: {},
+    };
 
     function init() {
       scene = new THREE.Scene();
@@ -282,14 +290,6 @@ export default class {
       });
     }
 
-    const raycaster = new THREE.Raycaster();
-    raycaster.params = {
-      Mesh: {threshold: 0.5},
-      Line: {threshold: 1},
-      LOD: {},
-      Points: {threshold: 1},
-      Sprite: {},
-    };
 
     function renderScene() {
       // update the picking ray with the camera and mouse position
