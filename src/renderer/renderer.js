@@ -3,6 +3,7 @@ import { createNanoEvents } from 'nanoevents';
 import * as THREE from 'three/build/three.module';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { MeshLine, MeshLineMaterial } from 'three.meshline';
+import { LightenDarkenColor, toSpherical, toCartesian } from './utils';
 import { generateGraticules, wireframe } from './graticules';
 import { loadRecipes } from './recipes';
 import modelsData from './modelsData';
@@ -26,7 +27,6 @@ export default class {
       // Unbind
       this.eventHandlers[eventName].call();
     }
-
     this.eventHandlers[eventName] = this.emitter.on(eventName, callback);
   }
 
@@ -38,7 +38,10 @@ export default class {
       controls,
       buildings = [],
       buildingsGroup,
-      beltsGroup;
+      beltsGroup,
+      selected,
+      lastMousePosition;
+
     const {
       data: bp,
       tooltipContainer,
@@ -49,7 +52,8 @@ export default class {
       emitter,
       recipeMaterials,
     } = this;
-    const DEGREES_TO_RADIANS = Math.PI / 180;
+
+    const mouse = new THREE.Vector2();
 
     function init() {
       scene = new THREE.Scene();
@@ -139,37 +143,8 @@ export default class {
       globe.add(mainWf);
     }
 
-    function LightenDarkenColor(num, amt) {
-      var r = Math.min(255, Math.round((num >> 16) * (1 + amt)));
-      var b = Math.min(255, Math.round(((num >> 8) & 0x00ff) * (1 + amt)));
-      var g = Math.min(255, Math.round((num & 0x0000ff) * (1 + amt)));
-      var newColor = g | (b << 8) | (r << 16);
-      return newColor;
-    }
-
-    function clamp(coord) {
-      coord.theta = ((coord.theta + Math.PI) % (2 * Math.PI)) - Math.PI;
-      coord.phi = ((coord.phi + Math.PI) % (2 * Math.PI)) - Math.PI;
-      return coord;
-    }
-
-    function toSpherical(pos) {
-      return clamp({
-        theta: (DEGREES_TO_RADIANS * (pos[0] + bp.referencePos[0])) / 100,
-        phi: (DEGREES_TO_RADIANS * (pos[1] + bp.referencePos[1])) / 100,
-        radius: 200.2,
-      });
-    }
-
-    function toCartesian(coord) {
-      var x = coord.radius * Math.sin(coord.theta) * Math.cos(coord.phi);
-      var y = coord.radius * Math.cos(coord.theta);
-      var z = coord.radius * Math.sin(coord.theta) * Math.sin(coord.phi);
-      return new THREE.Vector3(x, y, z);
-    }
-
     function renderBP() {
-      var reference = toSpherical([0, 0]);
+      var reference = toSpherical(bp, [0, 0]);
       var orig = [
         controls.minPolarAngle,
         controls.maxPolarAngle,
@@ -203,7 +178,7 @@ export default class {
         const building = bp.copiedBuildings[i];
         var model = modelsData[building.modelIndex];
         var stick = new THREE.Object3D();
-        var point = toCartesian(toSpherical(building.cursorRelativePos));
+        var point = toCartesian(toSpherical(bp, building.cursorRelativePos));
         stick.lookAt(point);
         buildingsGroup.add(stick);
         var geometry = new THREE.BoxGeometry(
@@ -258,7 +233,7 @@ export default class {
       var beltMap = {};
       for (let i = 0; i < bp.copiedBelts.length; i++) {
         const belt = bp.copiedBelts[i];
-        var point = toCartesian(toSpherical(belt.cursorRelativePos));
+        var point = toCartesian(toSpherical(bp, belt.cursorRelativePos));
         positions[belt.originalId] = point;
         beltMap[belt.originalId] = belt;
       }
@@ -307,11 +282,6 @@ export default class {
       });
     }
 
-    function animate() {
-      requestAnimationFrame(animate);
-      renderScene();
-    }
-
     const raycaster = new THREE.Raycaster();
     raycaster.params = {
       Mesh: {threshold: 0.5},
@@ -321,28 +291,6 @@ export default class {
       Sprite: {},
     };
 
-    const mouse = new THREE.Vector2();
-    let lastMousePosition;
-    function onMouseMove(event) {
-      const containerBounds = container.getBoundingClientRect();
-
-      const relativeX = event.clientX - containerBounds.left;
-      const relativeY = event.clientY - containerBounds.top;
-
-      lastMousePosition = { x: relativeX, y: relativeY };
-
-      mouse.x = ((relativeX / rendererWidth) * 2) - 1;
-      mouse.y = (-(relativeY / rendererHeight) * 2) + 1;
-    }
-
-    function onClick() {
-      if (selected) {
-        emitter.emit('entity:select', selected.data);
-      }
-    }
-
-    var selected;
-    var tooltip = tooltipContainer;
     function renderScene() {
       // update the picking ray with the camera and mouse position
       raycaster.setFromCamera(mouse, camera);
@@ -362,23 +310,46 @@ export default class {
         selected = intersects[0].object;
         selected.material.emissiveIntensity = 1;
         var data = selected.data;
-        tooltip.style.display = 'block';
-        tooltip.innerHTML = getTooltipContent(data);
+        tooltipContainer.style.display = 'block';
+        tooltipContainer.innerHTML = getTooltipContent(data);
       } else {
         if (selected) {
           selected.material.emissiveIntensity = 0.5;
         }
         document.body.style.cursor = '';
         selected = null;
-        tooltip.style.display = 'none';
+        tooltipContainer.style.display = 'none';
       }
 
       if (selected && lastMousePosition) {
-        tooltip.style.left = lastMousePosition.x - 60 + 'px';
-        tooltip.style.top = lastMousePosition.y - 105 + 'px';
+        tooltipContainer.style.left = lastMousePosition.x - 60 + 'px';
+        tooltipContainer.style.top = lastMousePosition.y - 105 + 'px';
       }
 
       renderer.render(scene, camera);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderScene();
+    }
+
+    function onMouseMove(event) {
+      const containerBounds = container.getBoundingClientRect();
+
+      const relativeX = event.clientX - containerBounds.left;
+      const relativeY = event.clientY - containerBounds.top;
+
+      lastMousePosition = { x: relativeX, y: relativeY };
+
+      mouse.x = ((relativeX / rendererWidth) * 2) - 1;
+      mouse.y = (-(relativeY / rendererHeight) * 2) + 1;
+    }
+
+    function onClick() {
+      if (selected) {
+        emitter.emit('entity:select', selected.data);
+      }
     }
 
     emitter.emit('render:start');
