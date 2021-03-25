@@ -290,7 +290,6 @@ export default class {
       });
     }
 
-
     function renderScene() {
       // update the picking ray with the camera and mouse position
       raycaster.setFromCamera(mouse, camera);
