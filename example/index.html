@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>DSP 3D Preview</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredericka+the+Great&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Teko:wght@300;400;500;600;700&display=swap');
+
+    .o-preview {
+      font-family: "Nunito Sans";
+    }
+
+    .o-preview-data textarea {
+      width: 100%;
+      height: 100px;
+      margin: 0;
+    }
+
+    .o-preview-data button {
+      width: 100%;
+      font-size: 14px;
+      margin: 0;
+      padding: 2px;
+    }
+
+    .o-preview-container {
+      position: relative;
+    }
+
+    .o-preview-output {
+      height: 800px;
+      margin: 8px;
+      line-height: 0;
+      border-bottom: 0;
+    }
+
+    .o-preview-tooltip {
+      position: absolute;
+      width: 120px;
+      background: rgba(30, 30, 30, 0.8);
+      color: white;
+      padding: 10px;
+      z-index: 999;
+      pointer-events: none;
+      display: none;
+      font-size: 14px;
+    }
+
+    .o-preview-tooltip p {
+      margin: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="main">
+    <div class="o-preview">
+      <div class="o-preview-data">
+         <textarea data-preview-target="data"></textarea>
+         <button data-preview-target="action">GO</button>
+      </div>
+      <div class="o-preview-container">
+        <div class="o-preview-output" data-preview-target="output"></div>
+        <div class="o-preview-tooltip" data-preview-target="tooltip"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript" src="dist/bundle.js"></script>
+  <script type="text/javascript" src="defaultBlueprint.js"></script>
+  <script type="text/javascript" src="example.js"></script>
+</body>
+</html>
