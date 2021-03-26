@@ -247,9 +247,13 @@ export default class {
     for (let i = 0; i < this.data.copiedBuildings.length; i++) {
       const sphericalPosition = this.data.copiedBuildings[i].sphericalPosition;
       avg.theta += sphericalPosition.theta / this.data.copiedBuildings.length;
-      avg.phi += sphericalPosition.phi / this.data.copiedBuildings.length;
+      avg.phi +=
+        ((sphericalPosition.phi > 0 ? 0 : 2 * Math.PI) +
+          sphericalPosition.phi) /
+        this.data.copiedBuildings.length;
     }
 
+    clamp(avg);
     const orig = [
       this.controls.minPolarAngle,
       this.controls.maxPolarAngle,
