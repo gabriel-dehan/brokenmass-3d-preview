@@ -1,4 +1,4 @@
-import * as THREE from 'three/build/three.module';
+import * as THREE from 'three';
 import {BufferGeometryUtils} from 'three/examples/jsm/utils/BufferGeometryUtils';
 import {LightenDarkenColor} from './utils';
 
@@ -183,6 +183,21 @@ modelsData[62].geometry = BufferGeometryUtils.mergeBufferGeometries(
   ],
   false
 );
+
+// chemical plants
+modelsData[64].geometry = BufferGeometryUtils.mergeBufferGeometries(
+  [
+    new THREE.BoxBufferGeometry(6, 5.1, 3).translate(-0.25, 0, 1.5),
+    new THREE.BoxBufferGeometry(7.5, 5.1, 1).translate(-0.75, 0, 0.5),
+    new THREE.CylinderBufferGeometry(1.5, 1.5, 4, 16)
+      .rotateX(Math.PI / 2)
+      .translate(2.5, 0.75, 2),
+    new THREE.SphereBufferGeometry(1.8, 16, 16)
+      .rotateX(Math.PI / 2)
+      .translate(2.5, 0.75, 4.5),
+  ],
+  false
+).translate(0.5, 0.78, 0);
 
 Object.values(modelsData).forEach((model) => {
   // create default box geometries for all entitities that don't have lowpoly models

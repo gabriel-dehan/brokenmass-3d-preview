@@ -1,12 +1,12 @@
 import pako from 'pako';
 import {createNanoEvents} from 'nanoevents';
-import * as THREE from 'three/build/three.module';
+import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import {MeshLine, MeshLineMaterial} from 'three.meshline';
 import {generateGraticules, wireframe} from './graticules';
 import {loadRecipes} from './recipes';
 import modelsData from './modelsData';
-import {toSpherical, toCartesian} from './utils';
+import {toSpherical, toCartesian, degToRad} from './utils';
 
 export default class {
   constructor({
@@ -309,8 +309,9 @@ export default class {
         wireframeMaterial
       );
 
-      buildingMesh.rotateZ(THREE.Math.degToRad(building.cursorRelativeYaw));
-      wireframe.rotateZ(THREE.Math.degToRad(building.cursorRelativeYaw));
+      buildingMesh.rotateZ(degToRad(building.cursorRelativeYaw));
+      wireframe.rotateZ(degToRad(building.cursorRelativeYaw));
+
       buildingMesh.position.set(0, 0, 200.2);
       wireframe.position.set(0, 0, 200.2);
       stick.add(buildingMesh);

@@ -1,4 +1,4 @@
-import * as THREE from 'three/build/three.module';
+import * as THREE from 'three';
 
 const ANGLE_STEP = 0.36;
 const grid = [

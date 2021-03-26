@@ -1,5 +1,5 @@
 const DEGREES_TO_RADIANS = Math.PI / 180;
-import * as THREE from 'three/build/three.module';
+import {Vector3} from 'three';
 
 export const LightenDarkenColor = function (num, amt) {
   var r = Math.min(255, Math.round((num >> 16) * (1 + amt)));
@@ -17,8 +17,8 @@ export const clamp = function (coord) {
 
 export const toSpherical = function (pos, referencePos) {
   return clamp({
-    theta: (DEGREES_TO_RADIANS * (pos[0] + referencePos[0])) / 100,
-    phi: (DEGREES_TO_RADIANS * (pos[1] + referencePos[1])) / 100,
+    theta: degToRad(pos[0] + referencePos[0]) / 100,
+    phi: degToRad(pos[1] + referencePos[1]) / 100,
     radius: 200.2,
   });
 };
@@ -27,5 +27,7 @@ export const toCartesian = function (coord) {
   var x = coord.radius * Math.sin(coord.theta) * Math.cos(coord.phi);
   var y = coord.radius * Math.cos(coord.theta);
   var z = coord.radius * Math.sin(coord.theta) * Math.sin(coord.phi);
-  return new THREE.Vector3(x, y, z);
+  return new Vector3(x, y, z);
 };
+
+export const degToRad = (angle) => DEGREES_TO_RADIANS * angle;

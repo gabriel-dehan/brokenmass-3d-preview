@@ -1,4 +1,4 @@
-import * as THREE from 'three/build/three.module';
+import * as THREE from 'three';
 import recipes from '../data/gameRecipes.json';
 
 const loader = new THREE.TextureLoader();

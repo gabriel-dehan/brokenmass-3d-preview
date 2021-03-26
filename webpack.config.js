@@ -4,13 +4,14 @@ module.exports = {
     path: __dirname + '/dist',
     publicPath: '/dist/',
     filename: 'bundle.js',
+
     library: {
       name: 'Brokenmass3DPreview',
       export: 'default',
       type: 'umd',
     },
   },
-  devtool: 'eval-source-map',
+  devtool: 'source-map',
   module: {
     rules: [
       {
@@ -25,5 +26,8 @@ module.exports = {
     static: require('path').join(__dirname, 'example'),
     open: false,
     hot: true,
+  },
+  optimization: {
+    usedExports: true,
   },
 };
