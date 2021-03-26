@@ -150,7 +150,7 @@ export default class {
           this.selected.material.emissiveIntensity = 0.5;
           this.selected = null;
         }
-        document.body.style.cursor = '';
+        this.container.style.cursor = '';
         this.hideTooltip();
       } else if (this.selected != intersects[0]) {
         if (this.selected) {
@@ -159,7 +159,7 @@ export default class {
 
         this.selected = intersects[0].object;
         this.selected.material.emissiveIntensity = 1;
-        document.body.style.cursor = 'pointer';
+        this.container.style.cursor = 'pointer';
         this.showTooltip();
       }
 
@@ -278,7 +278,7 @@ export default class {
 
     const positionsMap = {};
 
-    const recipeGeometry = new THREE.PlaneGeometry(2, 2, 1, 1);
+    const recipeGeometry = new THREE.PlaneGeometry(3, 3, 1, 1);
 
     const wireframeMaterial = new THREE.LineBasicMaterial({
       color: 0xffffff,
