@@ -318,7 +318,11 @@ export default class {
 
       buildingMesh.data = building;
 
-      if (building.recipeId != 0 && this.recipeMaterials[building.recipeId]) {
+      if (
+        building.recipeId != 0 &&
+        building.modelIndex != 45 && // ingore recipe for energy exchangers
+        this.recipeMaterials[building.recipeId]
+      ) {
         let recipeMaterial = this.recipeMaterials[building.recipeId];
         if (building.modelIndex === 73) {
           // ray receivers set recipeId as one when generating photons
