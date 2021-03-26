@@ -31,6 +31,18 @@ export default class {
     this.parseBlueprint(data);
   }
 
+  downloadCanvasAsImage() {
+    const downloadLink = document.createElement('a');
+    downloadLink.setAttribute('download', 'thumbnail.png');
+    const dataURL = this.renderer.domElement.toDataURL('image/png');
+    const url = dataURL.replace(
+      /^data:image\/png/,
+      'data:application/octet-stream'
+    );
+    downloadLink.setAttribute('href', url);
+    downloadLink.click();
+  }
+
   parseBlueprint(data) {
     this.data = JSON.parse(pako.inflate(atob(data), {to: 'string'}));
     this.buildings = [];
@@ -105,6 +117,7 @@ export default class {
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
+      preserveDrawingBuffer: true,
     });
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(this.rendererWidth, this.rendererHeight);

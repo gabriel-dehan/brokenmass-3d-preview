@@ -48,5 +48,11 @@ const Preview3DRenderer = Brokenmass3DPreview;
     });
 
     renderer.render();
+
+    const saveButton = document.querySelector('[data-preview-target=save]');
+
+    saveButton.addEventListener('click', function () {
+      renderer.downloadCanvasAsImage();
+    });
   });
 })();

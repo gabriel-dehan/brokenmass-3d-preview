@@ -11,6 +11,9 @@
         font-family: 'Nunito Sans';
       }
 
+      .o-preview-data {
+        text-align: center;
+      }
       .o-preview-data textarea {
         width: 100%;
         height: 100px;
@@ -18,10 +21,11 @@
       }
 
       .o-preview-data button {
-        width: 100%;
+        width: 45%;
         font-size: 14px;
         margin: 0;
         padding: 2px;
+        display: inline-block;
       }
 
       .o-preview-container {
@@ -62,6 +66,7 @@
         <div class="o-preview-data">
           <textarea data-preview-target="data"></textarea>
           <button data-preview-target="action">GO</button>
+          <button data-preview-target="save">Save as png</button>
         </div>
         <div class="o-preview-container">
           <div class="o-preview-output" data-preview-target="output"></div>
