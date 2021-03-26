@@ -297,7 +297,7 @@ Object.values(modelsData).forEach((model) => {
     ).translate(model.offset[0], model.offset[1], model.offset[2]);
   }
   model.wireframeGeometry = new THREE.EdgesGeometry(model.geometry);
-  const defaultColor = 0xb1bdcf;
+  const defaultColor = 0xa3aebd;
   model.material = new THREE.MeshPhongMaterial({
     color: LightenDarkenColor(model.color || defaultColor, -0.2),
     emissive: model.color || defaultColor,
