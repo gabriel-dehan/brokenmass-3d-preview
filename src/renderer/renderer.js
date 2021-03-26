@@ -40,7 +40,7 @@ export default class {
   // render:start, render:complete, entity:select
   on(eventName, callback) {
     if (this.eventHandlers[eventName]) {
-      // Unbind
+      // Unbind if already existing
       this.eventHandlers[eventName].call();
     }
     this.eventHandlers[eventName] = this.emitter.on(eventName, callback);
@@ -77,7 +77,7 @@ export default class {
 
     const sphereGeometry = new THREE.SphereGeometry(200, 36, 36);
     const sphereMaterial = new THREE.MeshPhongMaterial({
-      color: 0x156289,
+      color: 0x104D6C,
       emissive: 0x072534,
       side: THREE.DoubleSide,
     });
@@ -144,26 +144,28 @@ export default class {
     this.raycaster.setFromCamera(this.mouse, this.camera);
     const intersects = this.raycaster.intersectObjects(this.buildings);
 
-    if (!intersects.length) {
-      if (this.selected) {
-        this.selected.material.emissiveIntensity = 0.5;
-        this.selected = null;
-      }
-      document.body.style.cursor = '';
-      this.hideTooltip();
-    } else if (this.selected != intersects[0]) {
-      if (this.selected) {
-        this.selected.material.emissiveIntensity = 0.5;
+    if (this.lastMousePosition) {
+      if (!intersects.length) {
+        if (this.selected) {
+          this.selected.material.emissiveIntensity = 0.5;
+          this.selected = null;
+        }
+        document.body.style.cursor = '';
+        this.hideTooltip();
+      } else if (this.selected != intersects[0]) {
+        if (this.selected) {
+          this.selected.material.emissiveIntensity = 0.5;
+        }
+
+        this.selected = intersects[0].object;
+        this.selected.material.emissiveIntensity = 1;
+        document.body.style.cursor = 'pointer';
+        this.showTooltip();
       }
 
-      this.selected = intersects[0].object;
-      this.selected.material.emissiveIntensity = 1;
-      document.body.style.cursor = 'pointer';
-      this.showTooltip();
-    }
-
-    if (this.selected && this.lastMousePosition) {
-      this.repositionTooltip();
+      if (this.selected && this.lastMousePosition) {
+        this.repositionTooltip();
+      }
     }
   }
 
@@ -376,7 +378,7 @@ export default class {
     }
 
     const beltMaterial = new MeshLineMaterial({
-      color: 0xaaaaaa,
+      color: 0x282828,
       linewidth: 0.6,
     });
 
