@@ -21,19 +21,19 @@ const modelsData = {
   44: {
     size: [1.25, 1.25, 6],
     offset: [0, 0, 3],
-    color: 0xeecf17,
+    color: 0xffcb35,
   },
   // Energy exchanger
   45: {
     size: [8.300000190734863, 8.300000190734863, 12],
     offset: [0, 0, 6],
-    color: 0xeecf17,
+    color: 0xffcb35,
   },
   // Accumulator
   46: {
     size: [3.2699999809265137, 2.9800000190734863, 4.460000038146973],
     offset: [0, -0.09000000357627869, 2.2300000190734863],
-    color: 0xeecf17,
+    color: 0xffcb35,
   },
   // PLS
   49: {
@@ -127,7 +127,7 @@ const modelsData = {
   68: {
     size: [3.5, 3.5, 7],
     offset: [0, 0, 3.5],
-    color: 0xeecf17,
+    color: 0xffcb35,
   },
   // Particle collider
   69: {
@@ -143,7 +143,7 @@ const modelsData = {
   71: {
     size: [2.299999952316284, 2.299999952316284, 9.199999809265137],
     offset: [0, 0, 4.599999904632568],
-    color: 0xeecf17,
+    color: 0xffcb35,
   },
   // EM-Rail ejector
   72: {
