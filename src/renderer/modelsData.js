@@ -109,7 +109,7 @@ const modelsData = {
   65: {
     size: [4.199999809265137, 4.199999809265137, 4.599999904632568],
     offset: [0, 0, 2.299999952316284],
-    color: 0xFEC14F,
+    color: 0xe8a931,
   },
   // Assembler MK II
   66: {
