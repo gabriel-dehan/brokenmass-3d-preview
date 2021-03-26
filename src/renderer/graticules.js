@@ -1,5 +1,6 @@
 import * as THREE from 'three/build/three.module';
 
+const ANGLE_STEP = 0.36;
 const grid = [
   {
     segments: 20,
@@ -57,14 +58,14 @@ function* range(start, stop, step) {
   }
 }
 
-function meridian(x, y0, y1, dy = 0.36) {
+function meridian(x, y0, y1, dy = ANGLE_STEP) {
   x = Math.round(x * 100) / 100;
-  return Array.from(range(y0, y1 + 1e-6, dy), y => [x, y]);
+  return Array.from(range(y0, y1 + 1e-6, dy), (y) => [x, y]);
 }
 
-function parallel(y, x0, x1, dx = 0.36) {
+function parallel(y, x0, x1, dx = ANGLE_STEP) {
   y = Math.round(y * 100) / 100;
-  return Array.from(range(x0, x1 + 1e-6, dx), x => [x, y]);
+  return Array.from(range(x0, x1 + 1e-6, dx), (x) => [x, y]);
 }
 
 function vertex([longitude, latitude], radius) {
@@ -77,12 +78,13 @@ function vertex([longitude, latitude], radius) {
   );
 }
 
-export const generateGraticules = function() {
-  var coords = [];
-  var intermediateCoords = [];
-  var mainCoords = [];
-  for (var i = 0; i < 1000; i++) {
-    var segment = parallel(i * 0.36 - 180, -180, 180);
+export const generateGraticules = function () {
+  const coords = [];
+  const intermediateCoords = [];
+  const mainCoords = [];
+  for (let i = 0; i < 1000; i++) {
+    const segment = parallel(i * ANGLE_STEP - 180, -180, 180);
+
     if (i % 10 === 0) {
       mainCoords.push(segment);
     } else if (i % 5 === 0) {
@@ -91,15 +93,18 @@ export const generateGraticules = function() {
       coords.push(segment);
     }
   }
-  var index = 0;
-  grid.forEach((section) => {
-    var angle = 360 / section.segments;
-    var start = index * 0.36;
-    var end = (index + section.count) * 0.36;
 
-    for (var i = 0; i < section.segments; i++) {
-      var segA = meridian(i * angle - 180, -90 + start, -90 + end);
-      var segB = meridian(i * angle - 180, 90 - end, 90 - start);
+  let index = 0;
+  grid.forEach((section) => {
+    const angle = 360 / section.segments;
+
+    const start = 90 - index * ANGLE_STEP;
+    const end = 90 - (index + section.count) * ANGLE_STEP;
+
+    for (let i = 0; i < section.segments; i++) {
+      const segA = meridian(i * angle - 180, end, start);
+      const segB = meridian(i * angle - 180, -start, -end);
+
       if (i % 10 === 0) {
         mainCoords.push(segA);
         mainCoords.push(segB);
@@ -115,31 +120,27 @@ export const generateGraticules = function() {
     index += section.count;
   });
 
-  var normal = {
-    type: 'MultiLineString',
-    coordinates: coords,
-  };
-
-  var intermediate = {
-    type: 'MultiLineString',
-    coordinates: intermediateCoords,
-  };
-
-  var main = {
-    type: 'MultiLineString',
-    coordinates: mainCoords,
-  };
   return {
-    normal,
-    intermediate,
-    main,
+    normal: {
+      type: 'MultiLineString',
+      coordinates: coords,
+    },
+    intermediate: {
+      type: 'MultiLineString',
+      coordinates: intermediateCoords,
+    },
+    main: {
+      type: 'MultiLineString',
+      coordinates: mainCoords,
+    },
   };
 };
 
-export const wireframe = function(multilinestring, radius, material) {
+export const wireframe = function (multilinestring, radius, material) {
   const geometry = new THREE.Geometry();
   for (const P of multilinestring.coordinates) {
     for (let p0, p1 = vertex(P[0], radius), i = 1; i < P.length; ++i) {
+      // eslint-disable-next-line no-unused-vars
       geometry.vertices.push((p0 = p1), (p1 = vertex(P[i], radius)));
     }
   }

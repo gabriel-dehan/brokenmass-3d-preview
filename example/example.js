@@ -3,22 +3,24 @@
 const Preview3DRenderer = Brokenmass3DPreview;
 
 (function () {
-  const tooltipContainer = document.querySelector('[data-preview-target=tooltip]');
+  const tooltipContainer = document.querySelector(
+    '[data-preview-target=tooltip]'
+  );
   const container = document.querySelector('[data-preview-target=output]');
   const actionButton = document.querySelector('[data-preview-target=action]');
 
-  actionButton.addEventListener('click', function() {
+  actionButton.addEventListener('click', function () {
     // Clear the container
     container.innerHTML = '';
 
-    const data = document.querySelector('[data-preview-target=data]').value.trim();
+    const data = document
+      .querySelector('[data-preview-target=data]')
+      .value.trim();
 
     const renderer = new Preview3DRenderer({
       tooltipContainer,
       container,
       data: data === '' ? window.DEFAULT_BLUEPRINT : data,
-      width: container.clientWidth,
-      height: container.clientHeight,
       setTooltipContent: (data) => {
         return `
           <p>originalId  ${data.originalId}</p>
@@ -47,4 +49,4 @@ const Preview3DRenderer = Brokenmass3DPreview;
 
     renderer.render();
   });
-}());
+})();

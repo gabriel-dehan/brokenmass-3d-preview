@@ -1,7 +1,10 @@
 {
   "name": "brokenmass3dpreview",
   "author": "brokenmass",
-  "contributors": ["gabriel-dehan"],
+  "contributors": [
+    "gabriel-dehan",
+    "brokenmass"
+  ],
   "version": "0.0.1",
   "main": "dist/bundle.js",
   "license": "MIT",
@@ -28,9 +31,11 @@
     "@babel/plugin-transform-runtime": "^7.13.10",
     "@babel/preset-env": "^7.13.12",
     "babel-loader": "^8.2.2",
-    "eslint": "^5.10.0",
-    "eslint-watch": "^4.0.2",
+    "eslint": "^7.10.0",
+    "eslint-config-prettier": "^8.1.0",
+    "eslint-watch": "^7.0.0",
     "npm-run-all": "^4.0.2",
+    "prettier": "^2.2.1",
     "webpack": "^5.28.0",
     "webpack-cli": "^4.5.0",
     "webpack-dev-server": "^4.0.0-beta.0"

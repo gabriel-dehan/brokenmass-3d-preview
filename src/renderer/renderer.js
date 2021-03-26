@@ -1,24 +1,40 @@
 import pako from 'pako';
-import { createNanoEvents } from 'nanoevents';
+import {createNanoEvents} from 'nanoevents';
 import * as THREE from 'three/build/three.module';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { MeshLine, MeshLineMaterial } from 'three.meshline';
-import { LightenDarkenColor, toSpherical, toCartesian } from './utils';
-import { generateGraticules, wireframe } from './graticules';
-import { loadRecipes } from './recipes';
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
+import {MeshLine, MeshLineMaterial} from 'three.meshline';
+import {generateGraticules, wireframe} from './graticules';
+import {loadRecipes} from './recipes';
 import modelsData from './modelsData';
+import {toSpherical, toCartesian} from './utils';
 
 export default class {
-  constructor({ tooltipContainer, container, data, width, height, setTooltipContent, assetPathResolver }) {
+  constructor({
+    tooltipContainer,
+    container,
+    data,
+    setTooltipContent,
+    assetPathResolver,
+  }) {
     this.tooltipContainer = tooltipContainer;
     this.container = container;
-    this.rendererWidth = width;
-    this.rendererHeight = height;
-    this.getTooltipContent = setTooltipContent;
+    this.rendererWidth = container.clientWidth;
+    this.rendererHeight = container.clientHeight;
+    this.setTooltipContent = setTooltipContent;
     this.emitter = createNanoEvents();
     this.eventHandlers = {};
-    this.data = JSON.parse(pako.inflate(atob(data), { to: 'string' }));
     this.recipeMaterials = loadRecipes(assetPathResolver);
+    this.mouse = new THREE.Vector2();
+    this.lastMousePosition = null;
+
+    this.selected = null;
+    this.parseBlueprint(data);
+  }
+
+  parseBlueprint(data) {
+    this.data = JSON.parse(pako.inflate(atob(data), {to: 'string'}));
+    this.buildings = [];
+    this.belts = [];
   }
 
   // render:start, render:complete, entity:select
@@ -30,32 +46,78 @@ export default class {
     this.eventHandlers[eventName] = this.emitter.on(eventName, callback);
   }
 
-  render() {
-    var camera,
-      scene,
-      renderer,
-      sphere,
-      controls,
-      buildings = [],
-      buildingsGroup,
-      beltsGroup,
-      selected,
-      lastMousePosition;
+  renderGlobe() {
+    const globe = new THREE.Group();
 
-    const {
-      data: bp,
-      tooltipContainer,
-      container,
-      rendererWidth,
-      rendererHeight,
-      getTooltipContent,
-      emitter,
-      recipeMaterials,
-    } = this;
+    const lineMaterial = new THREE.LineBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.1,
+      linewidth: 0.5,
+    });
+    const intermediateMaterial = new THREE.LineBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.2,
+    });
+    const mainLineMaterial = new THREE.LineBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.4,
+    });
 
-    const mouse = new THREE.Vector2();
-    const raycaster = new THREE.Raycaster();
-    raycaster.params = {
+    const graticules = generateGraticules();
+    const normalWf = wireframe(graticules.normal, 200.1, lineMaterial);
+    const intermediateWf = wireframe(
+      graticules.intermediate,
+      200.1,
+      intermediateMaterial
+    );
+    const mainWf = wireframe(graticules.main, 200.1, mainLineMaterial);
+
+    const sphereGeometry = new THREE.SphereGeometry(200, 36, 36);
+    const sphereMaterial = new THREE.MeshPhongMaterial({
+      color: 0x156289,
+      emissive: 0x072534,
+      side: THREE.DoubleSide,
+    });
+    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+
+    globe.add(sphere);
+    globe.add(normalWf);
+    globe.add(intermediateWf);
+    globe.add(mainWf);
+
+    this.scene.add(globe);
+  }
+
+  initScene() {
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(
+      45,
+      this.rendererWidth / this.rendererHeight,
+      0.1,
+      10000
+    );
+
+    this.camera.position.z = 500;
+    this.scene.add(this.camera);
+
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+    });
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setSize(this.rendererWidth, this.rendererHeight);
+    this.container.appendChild(this.renderer.domElement);
+
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enablePan = false;
+    this.controls.enableZoom = true;
+    this.controls.minDistance = 250;
+    this.controls.maxDistance = 700;
+
+    this.raycaster = new THREE.Raycaster();
+    this.raycaster.params = {
       Mesh: {threshold: 0.5},
       Line: {threshold: 1},
       LOD: {},
@@ -63,301 +125,279 @@ export default class {
       Sprite: {},
     };
 
-    function init() {
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(
-        50,
-        rendererWidth / rendererHeight,
-        1,
-        10000
-      );
-      camera.position.z = 500;
-      scene.add(camera);
+    const cameraLight = new THREE.SpotLight(0xffffff, 1, 0);
+    cameraLight.position.set(0, 0, 0);
+    this.camera.add(cameraLight);
+  }
 
-      renderer = new THREE.WebGLRenderer({
-        antialias: true,
-      });
-      renderer.setPixelRatio(window.devicePixelRatio);
-      renderer.setSize(rendererWidth, rendererHeight);
-      container.appendChild(renderer.domElement);
+  scaleRotationSpeed() {
+    // scale rotation speed inversely proportional to camera distance
+    const cameraDistance = this.controls.target.distanceTo(
+      this.controls.object.position
+    );
+    this.controls.rotateSpeed =
+      cameraDistance ** 2 / this.controls.maxDistance ** 2;
+  }
 
-      controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableZoom = true;
-      controls.minDistance = 250;
-      controls.maxDistance = 700;
+  handleMouseInteraction() {
+    // calculate objects intersecting the picking ray
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    const intersects = this.raycaster.intersectObjects(this.buildings);
 
-      const lights = [];
-      lights[0] = new THREE.SpotLight(0xffffff, 1, 0);
-      lights[1] = new THREE.SpotLight(0xffffff, 1, 0);
-      lights[2] = new THREE.SpotLight(0xffffff, 1, 0);
+    if (!intersects.length) {
+      if (this.selected) {
+        this.selected.material.emissiveIntensity = 0.5;
+        this.selected = null;
+      }
+      document.body.style.cursor = '';
+      this.hideTooltip();
+    } else if (this.selected != intersects[0]) {
+      if (this.selected) {
+        this.selected.material.emissiveIntensity = 0.5;
+      }
 
-      lights[0].position.set(0, 800, 0);
-      lights[1].position.set(800, 1000, 800);
-      lights[2].position.set(-800, -1000, -800);
-      const ligthsGroup = new THREE.Group();
-      //ligthsGroup.add(lights[0]);
-      ligthsGroup.add(lights[1]);
-      ligthsGroup.add(lights[2]);
-
-      scene.add(ligthsGroup);
-
-      const light = new THREE.AmbientLight(0x404040); // soft white light
-      scene.add(light);
-
-      renderGlobe();
+      this.selected = intersects[0].object;
+      this.selected.material.emissiveIntensity = 1;
+      document.body.style.cursor = 'pointer';
+      this.showTooltip();
     }
 
-    function renderGlobe() {
-      var globe = new THREE.Group();
+    if (this.selected && this.lastMousePosition) {
+      this.repositionTooltip();
+    }
+  }
 
-      const lineMaterial = new THREE.LineBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.1,
-        linewidth: 0.5,
-      });
-      const intermediateMaterial = new THREE.LineBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.2,
-      });
-      const mainLineMaterial = new THREE.LineBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.4,
-      });
+  showTooltip() {
+    this.tooltipContainer.style.display = 'block';
+    this.tooltipContainer.innerHTML = this.setTooltipContent(
+      this.selected.data
+    );
+  }
 
-      var graticules = generateGraticules();
-      var normalWf = wireframe(graticules.normal, 200.1, lineMaterial);
-      var intermediateWf = wireframe(
-        graticules.intermediate,
-        200.1,
-        intermediateMaterial
-      );
-      var mainWf = wireframe(graticules.main, 200.1, mainLineMaterial);
+  hideTooltip() {
+    this.tooltipContainer.style.display = 'none';
+  }
 
-      var sphereGeometry = new THREE.SphereGeometry(200, 36, 36);
-      const sphereMaterial = new THREE.MeshPhongMaterial({
-        color: 0x156289,
-        emissive: 0x072534,
-        side: THREE.DoubleSide,
-      });
-      sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+  repositionTooltip() {
+    this.tooltipContainer.style.left = this.lastMousePosition.x + 'px';
+    this.tooltipContainer.style.top = this.lastMousePosition.y + 'px';
+  }
 
-      scene.add(globe);
-      globe.add(sphere);
-      globe.add(normalWf);
-      globe.add(intermediateWf);
-      globe.add(mainWf);
+  animate() {
+    requestAnimationFrame(this.animate.bind(this));
+
+    this.scaleRotationSpeed();
+
+    this.handleMouseInteraction();
+
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  initEvents() {
+    this.container.addEventListener(
+      'pointermove',
+      (event) => {
+        const containerBounds = this.container.getBoundingClientRect();
+
+        const relativeX = event.clientX - containerBounds.left;
+        const relativeY = event.clientY - containerBounds.top;
+
+        this.lastMousePosition = {x: relativeX, y: relativeY};
+
+        this.mouse.x = (relativeX / this.rendererWidth) * 2 - 1;
+        this.mouse.y = -(relativeY / this.rendererHeight) * 2 + 1;
+      },
+      false
+    );
+    this.container.addEventListener(
+      'click',
+      () => {
+        if (this.selected) {
+          this.emitter.emit('entity:select', this.selected.data);
+        }
+      },
+      false
+    );
+
+    window.addEventListener(
+      'resize',
+      () => {
+        this.rendererWidth = this.container.clientWidth;
+        this.rendererHeight = this.container.clientHeight;
+
+        this.camera.aspect = this.rendererWidth / this.rendererHeight;
+
+        this.camera.updateProjectionMatrix();
+        this.camera.lookAt(this.scene.position);
+
+        this.renderer.setSize(this.rendererWidth, this.rendererHeight);
+        this.renderer.render(this.scene, this.camera);
+      },
+      false
+    );
+  }
+
+  centerCamera() {
+    var avgTheta = 0;
+    var avgPhi = 0;
+    for (let i = 0; i < this.data.copiedBuildings.length; i++) {
+      const sphericalPosition = this.data.copiedBuildings[i].sphericalPosition;
+      avgTheta += sphericalPosition.theta / this.data.copiedBuildings.length;
+      avgPhi += sphericalPosition.phi / this.data.copiedBuildings.length;
     }
 
-    function renderBP() {
-      var reference = toSpherical(bp, [0, 0]);
-      var orig = [
-        controls.minPolarAngle,
-        controls.maxPolarAngle,
-        controls.minAzimuthAngle,
-        controls.maxAzimuthAngle,
-      ];
+    const orig = [
+      this.controls.minPolarAngle,
+      this.controls.maxPolarAngle,
+      this.controls.minAzimuthAngle,
+      this.controls.maxAzimuthAngle,
+    ];
 
-      controls.minPolarAngle = reference.theta;
-      controls.maxPolarAngle = reference.theta;
-      controls.minAzimuthAngle = reference.phi;
-      controls.maxAzimuthAngle = reference.phi;
-      controls.update();
+    this.controls.maxPolarAngle = this.controls.minPolarAngle = avgTheta;
+    this.controls.maxAzimuthAngle = this.controls.minAzimuthAngle =
+      Math.PI / 2 - avgPhi;
 
-      controls.minPolarAngle = orig[0];
-      controls.maxPolarAngle = orig[1];
-      controls.minAzimuthAngle = orig[2];
-      controls.maxAzimuthAngle = orig[3];
-      controls.update();
+    this.controls.update();
 
-      buildingsGroup = new THREE.Group();
-      beltsGroup = new THREE.Group();
-      scene.add(buildingsGroup);
-      scene.add(beltsGroup);
+    this.controls.minPolarAngle = orig[0];
+    this.controls.maxPolarAngle = orig[1];
+    this.controls.minAzimuthAngle = orig[2];
+    this.controls.maxAzimuthAngle = orig[3];
+    this.controls.update();
+  }
 
-      var positions = {};
+  renderBP() {
+    const buildingsGroup = new THREE.Group();
+    const beltsGroup = new THREE.Group();
+    this.scene.add(buildingsGroup);
+    this.scene.add(beltsGroup);
 
-      //recipeMaterial.repeat.set(meshWidth / textureWidth, meshHeight / textureHeight);
-      const recipeGeometry = new THREE.PlaneGeometry(2, 2, 1, 1);
+    const positionsMap = {};
 
-      for (let i = 0; i < bp.copiedBuildings.length; i++) {
-        const building = bp.copiedBuildings[i];
-        var model = modelsData[building.modelIndex];
-        var stick = new THREE.Object3D();
-        var point = toCartesian(toSpherical(bp, building.cursorRelativePos));
-        stick.lookAt(point);
-        buildingsGroup.add(stick);
-        var geometry = new THREE.BoxGeometry(
-          model.size[0] - 0.25,
-          model.size[1] - 0.25,
-          model.size[2]
+    //recipeMaterial.repeat.set(meshWidth / textureWidth, meshHeight / textureHeight);
+    const recipeGeometry = new THREE.PlaneGeometry(2, 2, 1, 1);
+
+    const wireframeMaterial = new THREE.LineBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.4,
+      linewidth: 2,
+    });
+
+    for (let i = 0; i < this.data.copiedBuildings.length; i++) {
+      const stick = new THREE.Object3D();
+
+      const building = this.data.copiedBuildings[i];
+      const modelData = modelsData[building.modelIndex];
+
+      building.sphericalPosition = toSpherical(
+        building.cursorRelativePos,
+        this.data.referencePos
+      );
+      building.cartesianPosition = toCartesian(building.sphericalPosition);
+
+      stick.lookAt(building.cartesianPosition);
+      buildingsGroup.add(stick);
+
+      const buildingMesh = new THREE.Mesh(
+        modelData.geometry,
+        modelData.material.clone()
+      );
+
+      const wireframe = new THREE.LineSegments(
+        modelData.wireframeGeometry,
+        wireframeMaterial
+      );
+
+      buildingMesh.rotateZ(THREE.Math.degToRad(building.cursorRelativeYaw));
+      wireframe.rotateZ(THREE.Math.degToRad(building.cursorRelativeYaw));
+      buildingMesh.position.set(0, 0, 200.2);
+      wireframe.position.set(0, 0, 200.2);
+      stick.add(buildingMesh);
+      stick.add(wireframe);
+
+      buildingMesh.data = building;
+
+      if (building.recipeId != 0 && this.recipeMaterials[building.recipeId]) {
+        const plane = new THREE.Mesh(
+          recipeGeometry,
+          this.recipeMaterials[building.recipeId]
         );
-        //const material = new THREE.MeshBasicMaterial({color: 0xffff00});
-
-        const material = new THREE.MeshPhongMaterial({
-          color: LightenDarkenColor(model.color || 0xcccccc, -0.5), // model.color || 0xcccccc,
-          emissive: LightenDarkenColor(model.color || 0xcccccc, 0),
-          emissiveIntensity: 0.5,
-          reflectivity: 1,
-          side: THREE.FrontSide,
-        });
-        var mesh = new THREE.Mesh(geometry, material);
-        mesh.rotateZ(THREE.Math.degToRad(building.cursorRelativeYaw));
-        mesh.position.set(0, 0, 200.2 + model.size[2] / 2);
-
-        mesh.data = building;
-        stick.add(mesh);
-
-        var geo = new THREE.EdgesGeometry(geometry);
-        var mat = new THREE.LineBasicMaterial({
-          color: 0xffffff,
-          transparent: true,
-          opacity: 0.3,
-          linewidth: 2,
-        });
-
-        var wireframe = new THREE.LineSegments(geo, mat);
-        wireframe.rotateZ(THREE.Math.degToRad(building.cursorRelativeYaw));
-        wireframe.position.set(0, 0, 200.2 + model.size[2] / 2);
-        stick.add(wireframe);
-
-        if (building.recipeId != 0 && recipeMaterials[building.recipeId]) {
-          const plane = new THREE.Mesh(
-            recipeGeometry,
-            recipeMaterials[building.recipeId]
-          );
-          plane.position.set(0, 0, 200.3 + model.size[2]);
-          stick.add(plane);
-        }
-        positions[building.originalId] = point;
-        buildings.push(mesh);
+        plane.position.set(0, 0, 200.3 + modelData.size[2]);
+        stick.add(plane);
       }
 
-      // const markerGeometry = new THREE.SphereGeometry(0.3, 4, 4);
-      // const markerMaterial = new THREE.MeshBasicMaterial({color: 0xff0000});
-
-      var beltMap = {};
-      for (let i = 0; i < bp.copiedBelts.length; i++) {
-        const belt = bp.copiedBelts[i];
-        var point = toCartesian(toSpherical(bp, belt.cursorRelativePos));
-        positions[belt.originalId] = point;
-        beltMap[belt.originalId] = belt;
-      }
-      var lanes = [];
-      for (let i = 0; i < bp.copiedBelts.length; i++) {
-        let belt = bp.copiedBelts[i];
-
-        if (belt.seen) continue;
-
-        var lane = [];
-        do {
-          lane.push(positions[belt.originalId]);
-          belt.seen = true;
-          belt = beltMap[belt.outputId];
-        } while (belt && !belt.seen);
-        if (belt) {
-          lane.push(positions[belt.originalId]);
-        }
-        belt = beltMap[bp.copiedBelts[i].backInputId];
-
-        if (belt) {
-          do {
-            lane.unshift(positions[belt.originalId]);
-            belt.seen = true;
-            belt = beltMap[belt.backInputId];
-          } while (belt && !belt.seen);
-        }
-        if (belt) {
-          lane.unshift(positions[belt.originalId]);
-        }
-        lanes.push(lane);
-      }
-
-      // var resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
-      lanes.forEach((lane) => {
-        const materialA = new MeshLineMaterial({
-          color: 0xff0000,
-          linewidth: 0.7,
-        });
-
-        const lineGeo = new MeshLine();
-        lineGeo.setPoints(lane);
-
-        const line = new THREE.Mesh(lineGeo.geometry, materialA);
-        beltsGroup.add(line);
-      });
+      positionsMap[building.originalId] = building.cartesianPosition;
+      this.buildings.push(buildingMesh);
     }
 
-    function renderScene() {
-      // update the picking ray with the camera and mouse position
-      raycaster.setFromCamera(mouse, camera);
-
-      var cameraDistance = controls.target.distanceTo(
-        controls.object.position
+    const beltMap = {};
+    for (let i = 0; i < this.data.copiedBelts.length; i++) {
+      const belt = this.data.copiedBelts[i];
+      const beltPosition = toCartesian(
+        toSpherical(belt.cursorRelativePos, this.data.referencePos)
       );
-      controls.rotateSpeed = (cameraDistance ** 2) / (controls.maxDistance ** 2);
-      // calculate objects intersecting the picking ray
-      const intersects = raycaster.intersectObjects(buildings);
+      positionsMap[belt.originalId] = beltPosition;
+      beltMap[belt.originalId] = belt;
+    }
 
-      if (intersects.length && selected != intersects[0]) {
-        if (selected) {
-          selected.material.emissiveIntensity = 0.5;
-        }
-        document.body.style.cursor = 'pointer';
-        selected = intersects[0].object;
-        selected.material.emissiveIntensity = 1;
-        var data = selected.data;
-        tooltipContainer.style.display = 'block';
-        tooltipContainer.innerHTML = getTooltipContent(data);
-      } else {
-        if (selected) {
-          selected.material.emissiveIntensity = 0.5;
-        }
-        document.body.style.cursor = '';
-        selected = null;
-        tooltipContainer.style.display = 'none';
+    const segments = [];
+    for (let i = 0; i < this.data.copiedBelts.length; i++) {
+      // create an array of connected belts , in order of connection
+      let belt = this.data.copiedBelts[i];
+
+      if (belt.seen) continue;
+
+      const segment = [];
+      do {
+        segment.push(positionsMap[belt.originalId]);
+        belt.seen = true;
+        belt = beltMap[belt.outputId];
+      } while (belt && !belt.seen);
+      if (belt) {
+        segment.push(positionsMap[belt.originalId]);
+      }
+      belt = beltMap[this.data.copiedBelts[i].backInputId];
+
+      if (belt) {
+        do {
+          segment.unshift(positionsMap[belt.originalId]);
+          belt.seen = true;
+          belt = beltMap[belt.backInputId];
+        } while (belt && !belt.seen);
+      }
+      if (belt) {
+        segment.unshift(positionsMap[belt.originalId]);
       }
 
-      if (selected && lastMousePosition) {
-        tooltipContainer.style.left = lastMousePosition.x - 60 + 'px';
-        tooltipContainer.style.top = lastMousePosition.y - 105 + 'px';
-      }
-
-      renderer.render(scene, camera);
+      segments.push(segment);
     }
 
-    function animate() {
-      requestAnimationFrame(animate);
-      renderScene();
-    }
+    const beltMaterial = new MeshLineMaterial({
+      color: 0xaaaaaa,
+      linewidth: 0.6,
+    });
 
-    function onMouseMove(event) {
-      const containerBounds = container.getBoundingClientRect();
+    segments.forEach((lane) => {
+      const beltGeometry = new MeshLine();
+      beltGeometry.setPoints(lane);
 
-      const relativeX = event.clientX - containerBounds.left;
-      const relativeY = event.clientY - containerBounds.top;
+      const line = new THREE.Mesh(beltGeometry.geometry, beltMaterial);
+      beltsGroup.add(line);
+    });
+  }
 
-      lastMousePosition = { x: relativeX, y: relativeY };
+  render() {
+    this.emitter.emit('render:start');
+    this.initScene();
+    this.initEvents();
 
-      mouse.x = ((relativeX / rendererWidth) * 2) - 1;
-      mouse.y = (-(relativeY / rendererHeight) * 2) + 1;
-    }
+    this.renderGlobe();
 
-    function onClick() {
-      if (selected) {
-        emitter.emit('entity:select', selected.data);
-      }
-    }
+    this.renderBP();
+    this.centerCamera();
+    this.animate();
 
-    emitter.emit('render:start');
-    init();
-    renderBP();
-    animate();
-    emitter.emit('render:complete');
-
-    container.addEventListener('pointermove', onMouseMove, false);
-    container.addEventListener('click', onClick, false);
+    this.emitter.emit('render:complete');
   }
 }

@@ -10,12 +10,15 @@ module.exports = {
       type: 'umd',
     },
   },
+  devtool: 'eval-source-map',
   module: {
-    rules: [{
-      test: /\.js$/,
-      exclude: /node_modules/,
-      use: 'babel-loader',
-    }],
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: 'babel-loader',
+      },
+    ],
   },
   devServer: {
     port: 8080,

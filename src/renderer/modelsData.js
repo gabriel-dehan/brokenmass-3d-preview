@@ -1,4 +1,8 @@
-export default {
+import * as THREE from 'three/build/three.module';
+import {BufferGeometryUtils} from 'three/examples/jsm/utils/BufferGeometryUtils';
+import {LightenDarkenColor} from './utils';
+
+const modelsData = {
   38: {
     size: [2.700000047683716, 2.700000047683716, 2.4000000953674316],
     offset: [0, 0, 1.2000000476837158],
@@ -149,3 +153,56 @@ export default {
     offset: [0, 0, 2],
   },
 };
+
+// tesla poles
+modelsData[44].geometry = new THREE.CylinderGeometry(0.4, 0.5, 6, 8, 1)
+  .rotateX(Math.PI / 2)
+  .translate(0, 0, 3);
+
+//factories
+modelsData[65].geometry = modelsData[66].geometry = modelsData[67].geometry = BufferGeometryUtils.mergeBufferGeometries(
+  [
+    new THREE.BoxBufferGeometry(4, 4, 1).translate(0, 0, 0.5),
+    new THREE.BoxBufferGeometry(0.3, 2, 4.6).translate(-1.3, 0, 2.3),
+    new THREE.BoxBufferGeometry(0.3, 2, 4.6).translate(1.3, 0, 2.3),
+    new THREE.BoxBufferGeometry(3.5, 3.5, 0.8).translate(0, 0, 3.95),
+  ],
+  false
+);
+
+//smelter
+modelsData[62].geometry = BufferGeometryUtils.mergeBufferGeometries(
+  [
+    new THREE.BoxBufferGeometry(3, 3, 1).translate(0, 0, 0.5),
+    new THREE.CylinderBufferGeometry(0.6, 1.2, 3.8, 16)
+      .rotateX(Math.PI / 2)
+      .translate(0, 0, 3.8 / 2),
+    new THREE.CylinderBufferGeometry(1.1, 1.1, 0.5, 16)
+      .rotateX(Math.PI / 2)
+      .translate(0, 0, 3.8 - 0.25),
+  ],
+  false
+);
+
+Object.values(modelsData).forEach((model) => {
+  // create default box geometries for all entitities that don't have lowpoly models
+  if (!model.geometry) {
+    model.geometry = new THREE.BoxGeometry(
+      model.size[0] - 0.25,
+      model.size[1] - 0.25,
+      model.size[2]
+    ).translate(model.offset[0], model.offset[1], model.offset[2]);
+  }
+  model.wireframeGeometry = new THREE.EdgesGeometry(model.geometry);
+
+  model.material = new THREE.MeshPhongMaterial({
+    color: LightenDarkenColor(model.color || 0xcccccc, -0.2),
+    emissive: model.color || 0xccccc,
+    emissiveIntensity: 0.5,
+    reflectivity: 0,
+    side: THREE.FrontSide,
+    shininess: 0.2,
+  });
+});
+
+export default modelsData;

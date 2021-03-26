@@ -9,42 +9,5 @@
     "ecmaVersion": 2016,
     "sourceType": "module"
   },
-  "extends": "eslint:recommended",
-  "rules": {
-    "no-unused-vars": "warn",
-    "no-mixed-operators": "warn",
-    "no-redeclare": "warn",
-    "indent": ["error", 2, {
-      "SwitchCase": 1
-    }],
-    "linebreak-style": ["error", "unix"],
-    "space-before-blocks": [ "error", "always"],
-    "quotes": [ "warn",  "single", {
-      "avoidEscape": true,
-      "allowTemplateLiterals": true
-    }],
-    "semi": [ "error", "always"],
-    "semi-spacing": "error",
-    "comma-spacing": ["error"],
-    "comma-dangle": ["error", {
-      "arrays": "always-multiline",
-      "objects": "always-multiline",
-      "imports": "always-multiline",
-      "exports": "always-multiline",
-      "functions": "ignore"
-    }],
-
-    "prefer-const": "error",
-    "prefer-rest-params": "error",
-
-    "arrow-spacing": [ "error", {
-      "before": true,
-      "after": true
-    }],
-    "arrow-parens": ["warn", "as-needed", {
-      "requireForBlockBody": true
-    }],
-    "no-shadow": "off",
-    "no-console": "warn"
-  }
+  "extends": ["eslint:recommended", "prettier"]
 }
