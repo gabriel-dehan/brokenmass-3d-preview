@@ -256,8 +256,39 @@ modelsData[73].geometry = BufferGeometryUtils.mergeBufferGeometries(
   ],
   false
 );
+
+modelsData[68].geometry = BufferGeometryUtils.mergeBufferGeometries(
+  [
+    new THREE.CylinderBufferGeometry(0.5, 1.8, 2.5, 4)
+      .rotateY(Math.PI / 4)
+      .rotateX(Math.PI / 2)
+      .translate(0, 0, 1.25),
+    new THREE.CylinderBufferGeometry(0.6, 1, 0.5, 4)
+      .rotateY(Math.PI / 4)
+      .rotateX(Math.PI / 2)
+      .translate(1, 0, 0.25),
+    new THREE.CylinderBufferGeometry(0.6, 1, 0.5, 4)
+      .rotateY(Math.PI / 4)
+      .rotateX(Math.PI / 2)
+      .translate(-1, 0, 0.25),
+    new THREE.CylinderBufferGeometry(0.6, 1, 0.5, 4)
+      .rotateY(Math.PI / 4)
+      .rotateX(Math.PI / 2)
+      .translate(0, 1, 0.25),
+    new THREE.CylinderBufferGeometry(0.6, 1, 0.5, 4)
+      .rotateY(Math.PI / 4)
+      .rotateX(Math.PI / 2)
+      .translate(0, -1, 0.25),
+    new THREE.CylinderBufferGeometry(1.8, 0.5, 2.5, 4)
+      .rotateY(Math.PI / 4)
+      .rotateX(Math.PI / 2)
+      .translate(0, 0, 5.75),
+  ],
+  false
+);
 Object.values(modelsData).forEach((model) => {
   // create default box geometries for all entitities that don't have lowpoly models
+
   if (!model.geometry) {
     model.geometry = new THREE.BoxGeometry(
       model.size[0] - 0.25,
