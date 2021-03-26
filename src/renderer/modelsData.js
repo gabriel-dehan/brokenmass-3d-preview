@@ -127,6 +127,7 @@ const modelsData = {
   73: {
     size: [7, 5, 10],
     offset: [0, 0, 5],
+    color: 0x400000,
   },
   74: {
     size: [15, 18.200000762939453, 19],
@@ -199,6 +200,32 @@ modelsData[64].geometry = BufferGeometryUtils.mergeBufferGeometries(
   false
 ).translate(0.5, 0.78, 0);
 
+// ray receiver
+modelsData[73].geometry = BufferGeometryUtils.mergeBufferGeometries(
+  [
+    new THREE.BoxBufferGeometry(7, 1, 1.2).translate(0, 0, 0.6),
+    new THREE.BoxBufferGeometry(5, 2.5, 2)
+      .rotateZ(Math.PI / 2)
+      .translate(0, 0, 1),
+
+    new THREE.CylinderBufferGeometry(1, 1, 5, 8)
+      .rotateX(Math.PI / 2)
+      .translate(0, 0, 2.25),
+
+    new THREE.ConeBufferGeometry(5, 2, 10, 1, true)
+      .rotateX(-Math.PI / 2)
+      .translate(0, 0, 3.7),
+
+    new THREE.ConeBufferGeometry(1, 5, 10)
+      .rotateX(Math.PI / 2)
+      .translate(0, 0, 7.2),
+
+    new THREE.SphereBufferGeometry(0.75, 8, 8)
+      .rotateX(Math.PI / 2)
+      .translate(0, 0, 9.25),
+  ],
+  false
+);
 Object.values(modelsData).forEach((model) => {
   // create default box geometries for all entitities that don't have lowpoly models
   if (!model.geometry) {
@@ -215,7 +242,7 @@ Object.values(modelsData).forEach((model) => {
     emissive: model.color || 0xccccc,
     emissiveIntensity: 0.5,
     reflectivity: 0,
-    side: THREE.FrontSide,
+    side: THREE.DoubleSide,
     shininess: 0.2,
   });
 });

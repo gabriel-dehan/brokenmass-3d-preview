@@ -274,7 +274,6 @@ export default class {
 
     const positionsMap = {};
 
-    //recipeMaterial.repeat.set(meshWidth / textureWidth, meshHeight / textureHeight);
     const recipeGeometry = new THREE.PlaneGeometry(2, 2, 1, 1);
 
     const wireframeMaterial = new THREE.LineBasicMaterial({
@@ -320,10 +319,12 @@ export default class {
       buildingMesh.data = building;
 
       if (building.recipeId != 0 && this.recipeMaterials[building.recipeId]) {
-        const plane = new THREE.Mesh(
-          recipeGeometry,
-          this.recipeMaterials[building.recipeId]
-        );
+        let recipeMaterial = this.recipeMaterials[building.recipeId];
+        if (building.modelIndex === 73) {
+          // ray receivers set recipeId as one when generating photons
+          recipeMaterial = this.recipeMaterials[1208];
+        }
+        const plane = new THREE.Mesh(recipeGeometry, recipeMaterial);
         plane.position.set(0, 0, 200.3 + modelData.size[2]);
         stick.add(plane);
       }
