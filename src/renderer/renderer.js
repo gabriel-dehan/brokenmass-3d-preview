@@ -6,7 +6,7 @@ import {MeshLine, MeshLineMaterial} from 'three.meshline';
 import {generateGraticules, wireframe} from './graticules';
 import {loadRecipes} from './recipes';
 import modelsData from './modelsData';
-import {toSpherical, toCartesian, degToRad} from './utils';
+import {toSpherical, toCartesian, degToRad, clamp} from './utils';
 
 export default class {
   constructor({
@@ -77,7 +77,7 @@ export default class {
 
     const sphereGeometry = new THREE.SphereGeometry(200, 36, 36);
     const sphereMaterial = new THREE.MeshPhongMaterial({
-      color: 0x104D6C,
+      color: 0x104d6c,
       emissive: 0x072534,
       side: THREE.DoubleSide,
     });
@@ -240,12 +240,14 @@ export default class {
   }
 
   centerCamera() {
-    var avgTheta = 0;
-    var avgPhi = 0;
+    var avg = {
+      theta: 0,
+      phi: 0,
+    };
     for (let i = 0; i < this.data.copiedBuildings.length; i++) {
       const sphericalPosition = this.data.copiedBuildings[i].sphericalPosition;
-      avgTheta += sphericalPosition.theta / this.data.copiedBuildings.length;
-      avgPhi += sphericalPosition.phi / this.data.copiedBuildings.length;
+      avg.theta += sphericalPosition.theta / this.data.copiedBuildings.length;
+      avg.phi += sphericalPosition.phi / this.data.copiedBuildings.length;
     }
 
     const orig = [
@@ -255,9 +257,9 @@ export default class {
       this.controls.maxAzimuthAngle,
     ];
 
-    this.controls.maxPolarAngle = this.controls.minPolarAngle = avgTheta;
+    this.controls.maxPolarAngle = this.controls.minPolarAngle = avg.theta;
     this.controls.maxAzimuthAngle = this.controls.minAzimuthAngle =
-      Math.PI / 2 - avgPhi;
+      Math.PI / 2 - avg.phi;
 
     this.controls.update();
 

@@ -100,7 +100,6 @@ export const generateGraticules = function () {
 
     const start = 90 - index * ANGLE_STEP;
     const end = 90 - (index + section.count) * ANGLE_STEP;
-
     for (let i = 0; i < section.segments; i++) {
       const segA = meridian(i * angle - 180, end, start);
       const segB = meridian(i * angle - 180, -start, -end);

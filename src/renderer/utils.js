@@ -18,7 +18,7 @@ export const clamp = function (coord) {
 export const toSpherical = function (pos, referencePos) {
   return clamp({
     theta: degToRad(pos[0] + referencePos[0]) / 100,
-    phi: degToRad(pos[1] + referencePos[1]) / 100,
+    phi: -degToRad(pos[1] + referencePos[1]) / 100,
     radius: 200.2,
   });
 };
