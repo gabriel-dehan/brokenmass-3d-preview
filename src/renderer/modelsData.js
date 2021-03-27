@@ -2,12 +2,27 @@ import * as THREE from 'three';
 import {BufferGeometryUtils} from 'three/examples/jsm/utils/BufferGeometryUtils';
 import {LightenDarkenColor} from './utils';
 
-const modelsData = {
+const beltsData = {
+  2001: {
+    color: 0xffa500,
+    speed: 6,
+  },
+  2002: {
+    color: 0x00ff00,
+    speed: 12,
+  },
+  2003: {
+    color: 0x0000ff,
+    speed: 30,
+  },
+};
+
+const buildingsData = {
   // Splitter
   38: {
     size: [2.700000047683716, 2.700000047683716, 2.4000000953674316],
     offset: [0, 0, 1.2000000476837158],
-    color: 0x556C8D,
+    color: 0x556c8d,
   },
   39: {
     size: [2, 2.700000047683716, 2.940000057220459],
@@ -115,7 +130,7 @@ const modelsData = {
   66: {
     size: [4.199999809265137, 4.199999809265137, 4.599999904632568],
     offset: [0, 0, 2.299999952316284],
-    color: 0x05A79C,
+    color: 0x05a79c,
   },
   // Assembler MK III
   67: {
@@ -186,12 +201,12 @@ const modelsData = {
 };
 
 // tesla poles
-modelsData[44].geometry = new THREE.CylinderGeometry(0.4, 0.5, 6, 8, 1)
+buildingsData[44].geometry = new THREE.CylinderGeometry(0.4, 0.5, 6, 8, 1)
   .rotateX(Math.PI / 2)
   .translate(0, 0, 3);
 
 //factories
-modelsData[65].geometry = modelsData[66].geometry = modelsData[67].geometry = BufferGeometryUtils.mergeBufferGeometries(
+buildingsData[65].geometry = buildingsData[66].geometry = buildingsData[67].geometry = BufferGeometryUtils.mergeBufferGeometries(
   [
     new THREE.BoxBufferGeometry(4, 4, 1).translate(0, 0, 0.5),
     new THREE.BoxBufferGeometry(0.3, 2, 4.6).translate(-1.3, 0, 2.3),
@@ -202,7 +217,7 @@ modelsData[65].geometry = modelsData[66].geometry = modelsData[67].geometry = Bu
 );
 
 //smelter
-modelsData[62].geometry = BufferGeometryUtils.mergeBufferGeometries(
+buildingsData[62].geometry = BufferGeometryUtils.mergeBufferGeometries(
   [
     new THREE.BoxBufferGeometry(3, 3, 1).translate(0, 0, 0.5),
     new THREE.CylinderBufferGeometry(0.6, 1.2, 3.8, 16)
@@ -216,7 +231,7 @@ modelsData[62].geometry = BufferGeometryUtils.mergeBufferGeometries(
 );
 
 // chemical plants
-modelsData[64].geometry = BufferGeometryUtils.mergeBufferGeometries(
+buildingsData[64].geometry = BufferGeometryUtils.mergeBufferGeometries(
   [
     new THREE.BoxBufferGeometry(6, 5.1, 3).translate(-0.25, 0, 1.5),
     new THREE.BoxBufferGeometry(7.5, 5.1, 1).translate(-0.75, 0, 0.5),
@@ -231,7 +246,7 @@ modelsData[64].geometry = BufferGeometryUtils.mergeBufferGeometries(
 ).translate(0.5, 0.78, 0);
 
 // ray receiver
-modelsData[73].geometry = BufferGeometryUtils.mergeBufferGeometries(
+buildingsData[73].geometry = BufferGeometryUtils.mergeBufferGeometries(
   [
     new THREE.BoxBufferGeometry(7, 1, 1.2).translate(0, 0, 0.6),
     new THREE.BoxBufferGeometry(5, 2.5, 2)
@@ -257,7 +272,7 @@ modelsData[73].geometry = BufferGeometryUtils.mergeBufferGeometries(
   false
 );
 
-modelsData[68].geometry = BufferGeometryUtils.mergeBufferGeometries(
+buildingsData[68].geometry = BufferGeometryUtils.mergeBufferGeometries(
   [
     new THREE.CylinderBufferGeometry(0.5, 1.8, 2.5, 4)
       .rotateY(Math.PI / 4)
@@ -286,7 +301,7 @@ modelsData[68].geometry = BufferGeometryUtils.mergeBufferGeometries(
   ],
   false
 );
-Object.values(modelsData).forEach((model) => {
+Object.values(buildingsData).forEach((model) => {
   // create default box geometries for all entitities that don't have lowpoly models
 
   if (!model.geometry) {
@@ -308,4 +323,4 @@ Object.values(modelsData).forEach((model) => {
   });
 });
 
-export default modelsData;
+export {beltsData, buildingsData};

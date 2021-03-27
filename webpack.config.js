@@ -22,6 +22,7 @@ module.exports = {
     ],
   },
   devServer: {
+    firewall: false,
     port: 8080,
     static: require('path').join(__dirname, 'example'),
     open: false,

@@ -5,7 +5,7 @@ import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import {MeshLine, MeshLineMaterial} from 'three.meshline';
 import {generateGraticules, wireframe} from './graticules';
 import {loadRecipes} from './recipes';
-import modelsData from './modelsData';
+import {buildingsData, beltsData} from './modelsData';
 import {toSpherical, toCartesian, degToRad, clamp} from './utils';
 
 export default class {
@@ -23,6 +23,7 @@ export default class {
     this.setTooltipContent = setTooltipContent;
     this.emitter = createNanoEvents();
     this.eventHandlers = {};
+    this.assetPathResolver = assetPathResolver;
     this.recipeMaterials = loadRecipes(assetPathResolver);
     this.mouse = new THREE.Vector2();
     this.lastMousePosition = null;
@@ -185,7 +186,7 @@ export default class {
   showTooltip() {
     this.tooltipContainer.style.display = 'block';
     this.tooltipContainer.innerHTML = this.setTooltipContent(
-      this.selected.data
+      this.selected.userData
     );
   }
 
@@ -198,12 +199,23 @@ export default class {
     this.tooltipContainer.style.top = this.lastMousePosition.y + 'px';
   }
 
+  updateBelts() {
+    this.belts.forEach((line) => {
+      const mo = line.material.uniforms.mapOffset;
+      if (mo != null) {
+        mo.value.x -= 0.005 * line.userData.speed;
+      }
+    });
+  }
+
   animate() {
     requestAnimationFrame(this.animate.bind(this));
 
     this.scaleRotationSpeed();
 
     this.handleMouseInteraction();
+
+    this.updateBelts();
 
     this.renderer.render(this.scene, this.camera);
   }
@@ -228,7 +240,7 @@ export default class {
       'click',
       () => {
         if (this.selected) {
-          this.emitter.emit('entity:select', this.selected.data);
+          this.emitter.emit('entity:select', this.selected.userData);
         }
       },
       false
@@ -308,7 +320,7 @@ export default class {
       const stick = new THREE.Object3D();
 
       const building = this.data.copiedBuildings[i];
-      const modelData = modelsData[building.modelIndex];
+      const modelData = buildingsData[building.modelIndex];
 
       building.sphericalPosition = toSpherical(
         building.cursorRelativePos,
@@ -337,7 +349,7 @@ export default class {
       stick.add(buildingMesh);
       stick.add(wireframe);
 
-      buildingMesh.data = building;
+      buildingMesh.userData = building;
 
       if (
         building.recipeId != 0 &&
@@ -368,11 +380,15 @@ export default class {
       beltMap[belt.originalId] = belt;
     }
 
-    const segments = [];
+    const beltTexture = new THREE.TextureLoader().load(
+      this.assetPathResolver('textures', 'belt')
+    );
+    beltTexture.wrapS = THREE.RepeatWrapping;
+    beltTexture.wrapT = THREE.RepeatWrapping;
     for (let i = 0; i < this.data.copiedBelts.length; i++) {
       // create an array of connected belts , in order of connection
       let belt = this.data.copiedBelts[i];
-
+      const beltId = belt.protoId;
       if (belt.seen) continue;
 
       const segment = [];
@@ -380,7 +396,7 @@ export default class {
         segment.push(positionsMap[belt.originalId]);
         belt.seen = true;
         belt = beltMap[belt.outputId];
-      } while (belt && !belt.seen);
+      } while (belt && !belt.seen && beltId == belt.protoId);
       if (belt) {
         segment.push(positionsMap[belt.originalId]);
       }
@@ -390,28 +406,57 @@ export default class {
         do {
           segment.unshift(positionsMap[belt.originalId]);
           belt.seen = true;
-          belt = beltMap[belt.backInputId];
-        } while (belt && !belt.seen);
+
+          if (
+            beltMap[belt.backInputId] &&
+            !beltMap[belt.backInputId].seen &&
+            beltId == beltMap[belt.backInputId].protoId
+          ) {
+            belt = beltMap[belt.backInputId];
+          } else if (
+            beltMap[belt.leftInputId] &&
+            !beltMap[belt.leftInputId].seen &&
+            beltId == beltMap[belt.leftInputId].protoId
+          ) {
+            belt = beltMap[belt.leftInputId];
+          } else {
+            belt = beltMap[belt.rightInputId];
+          }
+        } while (belt && !belt.seen && beltId == belt.protoId);
       }
       if (belt) {
         segment.unshift(positionsMap[belt.originalId]);
       }
-
-      segments.push(segment);
-    }
-
-    const beltMaterial = new MeshLineMaterial({
-      color: 0x282828,
-      linewidth: 0.6,
-    });
-
-    segments.forEach((lane) => {
+      const model = beltsData[beltId];
       const beltGeometry = new MeshLine();
-      beltGeometry.setPoints(lane);
+      beltGeometry.setPoints(segment);
+      const beltMaterial = new MeshLineMaterial({
+        useMap: true,
+        map: beltTexture,
+        color: model.color,
+        linewidth: 0.6,
+        repeat: new THREE.Vector2(segment.length, 1),
+      });
+
+      beltMaterial.onBeforeCompile = function (shader) {
+        shader.uniforms.mapOffset = {value: new THREE.Vector2(0, 0)};
+        shader.fragmentShader = shader.fragmentShader.replace(
+          'uniform float useMap;',
+          'uniform float useMap;\nuniform vec2 mapOffset;'
+        );
+        shader.fragmentShader = shader.fragmentShader.replace(
+          'if( useMap == 1. ) c *= texture2D( map, vUV * repeat );',
+          'if( useMap == 1. ) c *= texture2D( map, vUV * repeat + mapOffset);'
+        );
+      };
 
       const line = new THREE.Mesh(beltGeometry.geometry, beltMaterial);
+
+      line.userData = model;
+
       beltsGroup.add(line);
-    });
+      this.belts.push(line);
+    }
   }
 
   render() {
