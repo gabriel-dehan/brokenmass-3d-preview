@@ -7,5 +7,5 @@
 
 ## Roadmap
 
-- [ ] Belts are sometimes not rendered properly, for instance: https://www.dysonsphereblueprints.com/blueprints/research-bottle has a hole
+- [ ] Belts are sometimes not rendered properly, for instance: https://www.dysonsphereblueprints.com/blueprints/research-bottle has a hole (also has an undefined on ILS mouseover)
 - [ ] Improve mouseover so it doesn't trigger multiple times on the same object
