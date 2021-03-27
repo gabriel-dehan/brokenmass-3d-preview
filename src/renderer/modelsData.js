@@ -12,7 +12,7 @@ const beltsData = {
     speed: 12,
   },
   2003: {
-    color: 0x0000ff,
+    color: 0x04c5ff,
     speed: 30,
   },
 };
