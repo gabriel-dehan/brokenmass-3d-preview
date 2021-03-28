@@ -10,6 +10,7 @@ const Preview3DRenderer = Brokenmass3DPreview;
   const actionButton = document.querySelector('[data-preview-target=action]');
   const pauseButton = document.querySelector('[data-preview-target=pause]');
   const saveButton = document.querySelector('[data-preview-target=save]');
+  const beltsButton = document.querySelector('[data-preview-target=belts]');
 
   actionButton.addEventListener('click', function () {
     // Clear the container
@@ -78,6 +79,17 @@ const Preview3DRenderer = Brokenmass3DPreview;
         renderer.pause();
         e.target.textContent = 'Restart';
       }
+    });
+
+    beltsButton.addEventListener('click', function (e) {
+      if (renderer.beltMovement) {
+        renderer.setBeltMovement(false);
+        e.target.textContent = 'Activate belts';
+      } else {
+        renderer.setBeltMovement(true);
+        e.target.textContent = 'Deactivate belts';
+      }
+
     });
 
   });

@@ -40,6 +40,9 @@ export default class {
     THREE.DefaultLoadingManager.onLoad = () =>
       this.emitter.emit('assets:loader:complete');
 
+    this.background = new THREE.TextureLoader().load(
+      this.assetPathResolver('textures', 'background')
+    );
     this.planetTexture = new THREE.TextureLoader().load(
       this.assetPathResolver('textures', 'planet')
     );
