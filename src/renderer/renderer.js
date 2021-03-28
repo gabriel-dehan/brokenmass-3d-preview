@@ -36,6 +36,7 @@ export default class {
   loadAssets() {
     THREE.DefaultLoadingManager.onLoad = () => this.emitter.emit('assets:loader:complete');
 
+    this.background = new THREE.TextureLoader().load(this.assetPathResolver('textures', 'background'));
     this.planetTexture = new THREE.TextureLoader().load(this.assetPathResolver('textures', 'planet'));
     this.planetNormalMap = new THREE.TextureLoader().load(this.assetPathResolver('textures', 'planetNormalMap'));
     this.recipeMaterials = loadRecipes(this.assetPathResolver);
@@ -147,6 +148,7 @@ export default class {
 
   initScene() {
     this.scene = new THREE.Scene();
+    this.scene.background = this.background;
     this.camera = new THREE.PerspectiveCamera(
       45,
       this.rendererWidth / this.rendererHeight,
