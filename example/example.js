@@ -8,6 +8,8 @@ const Preview3DRenderer = Brokenmass3DPreview;
   );
   const container = document.querySelector('[data-preview-target=output]');
   const actionButton = document.querySelector('[data-preview-target=action]');
+  const pauseButton = document.querySelector('[data-preview-target=pause]');
+  const saveButton = document.querySelector('[data-preview-target=save]');
 
   actionButton.addEventListener('click', function () {
     // Clear the container
@@ -29,18 +31,33 @@ const Preview3DRenderer = Brokenmass3DPreview;
         `.trim();
       },
       assetPathResolver: (assetType, id) => {
-        return `https://dyson-sphere-blueprints-dev.s3-eu-west-1.amazonaws.com/public/game_icons/${assetType}/${id}.png`;
+        // Faster loading for textures
+        const extension = assetType === 'textures' ? 'jpg' : 'png';
+        return `https://dyson-sphere-blueprints-dev.s3-eu-west-1.amazonaws.com/public/game_icons/${assetType}/${id}.${extension}`;
       },
     });
 
     renderer.on('render:start', function () {
-      console.log('Started');
-      // Display loader for instance
+      // Loader for instance
+      console.log('Started rendering');
     });
 
     renderer.on('render:complete', function () {
       console.log('Rendered');
       // Hide loader
+    });
+
+    renderer.on('assets:loader:complete', function () {
+      // Hide loader
+      console.log('Done loading assets');
+    });
+
+    renderer.on('render:pause', function () {
+      console.log('Paused');
+    });
+
+    renderer.on('render:restart', function () {
+      console.log('Restarted');
     });
 
     renderer.on('entity:select', function (data) {
@@ -49,10 +66,19 @@ const Preview3DRenderer = Brokenmass3DPreview;
 
     renderer.render();
 
-    const saveButton = document.querySelector('[data-preview-target=save]');
-
     saveButton.addEventListener('click', function () {
       renderer.downloadCanvasAsImage();
     });
+
+    pauseButton.addEventListener('click', function (e) {
+      if (renderer.isPaused) {
+        renderer.restart();
+        e.target.textContent = 'Pause';
+      } else {
+        renderer.pause();
+        e.target.textContent = 'Restart';
+      }
+    });
+
   });
 })();

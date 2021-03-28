@@ -7,5 +7,6 @@
 
 ## Roadmap
 
-- [ ] Belts are sometimes not rendered properly, for instance: https://www.dysonsphereblueprints.com/blueprints/research-bottle has a hole (also has an undefined on ILS mouseover)
+- [ ] Only load needed recipe icons
+- [ ] Belts are sometimes not rendered properly, for instance: https://www.dysonsphereblueprints.com/blueprints/research-bottle has a hole
 - [ ] Improve mouseover so it doesn't trigger multiple times on the same object

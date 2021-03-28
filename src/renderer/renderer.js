@@ -24,12 +24,36 @@ export default class {
     this.emitter = createNanoEvents();
     this.eventHandlers = {};
     this.assetPathResolver = assetPathResolver;
-    this.recipeMaterials = loadRecipes(assetPathResolver);
     this.mouse = new THREE.Vector2();
     this.lastMousePosition = null;
-
+    this.isPaused = false;
     this.selected = null;
+
+    this.loadAssets();
     this.parseBlueprint(data);
+  }
+
+  loadAssets() {
+    THREE.DefaultLoadingManager.onLoad = () => this.emitter.emit('assets:loader:complete');
+
+    this.planetTexture = new THREE.TextureLoader().load(this.assetPathResolver('textures', 'planet'));
+    this.planetNormalMap = new THREE.TextureLoader().load(this.assetPathResolver('textures', 'planetNormalMap'));
+    this.recipeMaterials = loadRecipes(this.assetPathResolver);
+  }
+
+  pause() {
+    if (!this.isPaused) {
+      this.isPaused = true;
+      this.emitter.emit('render:pause');
+    }
+  }
+
+  restart() {
+    if (this.isPaused) {
+      this.isPaused = false;
+      this.emitter.emit('render:restart');
+      this.animate();
+    }
   }
 
   downloadCanvasAsImage() {
@@ -50,7 +74,7 @@ export default class {
     this.belts = [];
   }
 
-  // render:start, render:complete, entity:select
+  // render:start, render:complete, assets:loader:complete, render:pause, render:restart, entity:select
   on(eventName, callback) {
     if (this.eventHandlers[eventName]) {
       // Unbind if already existing
@@ -89,11 +113,28 @@ export default class {
     const mainWf = wireframe(graticules.main, 200.1, mainLineMaterial);
 
     const sphereGeometry = new THREE.SphereGeometry(200, 36, 36);
-    const sphereMaterial = new THREE.MeshPhongMaterial({
-      color: 0x104d6c,
-      emissive: 0x072534,
-      side: THREE.DoubleSide,
+
+    this.planetTexture.wrapS = THREE.RepeatWrapping;
+    this.planetTexture.wrapT = THREE.RepeatWrapping;
+    this.planetTexture.repeat = new THREE.Vector2(50, 50);
+    this.planetNormalMap.wrapS = THREE.RepeatWrapping;
+    this.planetNormalMap.wrapT = THREE.RepeatWrapping;
+    this.planetNormalMap.repeat = new THREE.Vector2(50, 50);
+
+    const sphereMaterial = new THREE.MeshStandardMaterial({
+        map: this.planetTexture,
+        normalMap : this.planetNormalMap,
+        normalMapType: THREE.TangentSpaceNormalMap,
+        roughness: 0.6,
+        emissive: 0x1B1610,
+        side: THREE.DoubleSide,
     });
+    // Old sphere material, blue and without textures
+    // const sphereMaterial = new THREE.MeshPhongMaterial({
+    //   color: 0x104d6c,
+    //   emissive: 0x072534,
+    //   side: THREE.DoubleSide,
+    // });
     const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
 
     globe.add(sphere);
@@ -209,6 +250,10 @@ export default class {
   }
 
   animate() {
+    if (this.isPaused) {
+      return;
+    }
+
     requestAnimationFrame(this.animate.bind(this));
 
     this.scaleRotationSpeed();
