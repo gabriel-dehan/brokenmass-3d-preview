@@ -15,6 +15,7 @@ export default class {
     data,
     setTooltipContent,
     assetPathResolver,
+    beltMovement,
   }) {
     this.tooltipContainer = tooltipContainer;
     this.container = container;
@@ -28,16 +29,23 @@ export default class {
     this.lastMousePosition = null;
     this.isPaused = false;
     this.selected = null;
+    this.beltMovement = beltMovement;
 
+    this.requestedRendering = false;
     this.loadAssets();
     this.parseBlueprint(data);
   }
 
   loadAssets() {
-    THREE.DefaultLoadingManager.onLoad = () => this.emitter.emit('assets:loader:complete');
+    THREE.DefaultLoadingManager.onLoad = () =>
+      this.emitter.emit('assets:loader:complete');
 
-    this.planetTexture = new THREE.TextureLoader().load(this.assetPathResolver('textures', 'planet'));
-    this.planetNormalMap = new THREE.TextureLoader().load(this.assetPathResolver('textures', 'planetNormalMap'));
+    this.planetTexture = new THREE.TextureLoader().load(
+      this.assetPathResolver('textures', 'planet')
+    );
+    this.planetNormalMap = new THREE.TextureLoader().load(
+      this.assetPathResolver('textures', 'planetNormalMap')
+    );
     this.recipeMaterials = loadRecipes(this.assetPathResolver);
   }
 
@@ -57,6 +65,8 @@ export default class {
   }
 
   downloadCanvasAsImage() {
+    this.renderer.preserveDrawingBuffer = true;
+    this.renderer.render(this.scene, this.camera);
     const downloadLink = document.createElement('a');
     downloadLink.setAttribute('download', 'thumbnail.png');
     const dataURL = this.renderer.domElement.toDataURL('image/png');
@@ -66,6 +76,8 @@ export default class {
     );
     downloadLink.setAttribute('href', url);
     downloadLink.click();
+
+    this.renderer.preserveDrawingBuffer = false;
   }
 
   parseBlueprint(data) {
@@ -122,12 +134,12 @@ export default class {
     this.planetNormalMap.repeat = new THREE.Vector2(50, 50);
 
     const sphereMaterial = new THREE.MeshStandardMaterial({
-        map: this.planetTexture,
-        normalMap : this.planetNormalMap,
-        normalMapType: THREE.TangentSpaceNormalMap,
-        roughness: 0.6,
-        emissive: 0x1B1610,
-        side: THREE.DoubleSide,
+      map: this.planetTexture,
+      normalMap: this.planetNormalMap,
+      normalMapType: THREE.TangentSpaceNormalMap,
+      roughness: 0.6,
+      emissive: 0x1b1610,
+      side: THREE.DoubleSide,
     });
     // Old sphere material, blue and without textures
     // const sphereMaterial = new THREE.MeshPhongMaterial({
@@ -158,8 +170,7 @@ export default class {
     this.scene.add(this.camera);
 
     this.renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      preserveDrawingBuffer: true,
+      powerPreference: 'high-performance',
     });
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(this.rendererWidth, this.rendererHeight);
@@ -241,26 +252,33 @@ export default class {
   }
 
   updateBelts() {
+    if (!this.beltMovement) return;
+    requestAnimationFrame(this.updateBelts.bind(this));
+
     this.belts.forEach((line) => {
       const mo = line.material.uniforms.mapOffset;
       if (mo != null) {
         mo.value.x -= 0.005 * line.userData.speed;
       }
     });
+
+    this.requestRendering();
+  }
+
+  requestRendering() {
+    if (!this.requestedRendering && !this.isPaused) {
+      this.requestedRendering = true;
+
+      requestAnimationFrame(this.animate.bind(this));
+    }
   }
 
   animate() {
-    if (this.isPaused) {
-      return;
-    }
-
-    requestAnimationFrame(this.animate.bind(this));
+    this.requestedRendering = false;
 
     this.scaleRotationSpeed();
 
     this.handleMouseInteraction();
-
-    this.updateBelts();
 
     this.renderer.render(this.scene, this.camera);
   }
@@ -278,6 +296,8 @@ export default class {
 
         this.mouse.x = (relativeX / this.rendererWidth) * 2 - 1;
         this.mouse.y = -(relativeY / this.rendererHeight) * 2 + 1;
+
+        this.requestRendering();
       },
       false
     );
@@ -291,6 +311,8 @@ export default class {
       false
     );
 
+    this.controls.addEventListener('change', () => this.requestRendering());
+
     window.addEventListener(
       'resize',
       () => {
@@ -303,7 +325,8 @@ export default class {
         this.camera.lookAt(this.scene.position);
 
         this.renderer.setSize(this.rendererWidth, this.rendererHeight);
-        this.renderer.render(this.scene, this.camera);
+
+        this.requestRendering();
       },
       false
     );
@@ -515,6 +538,19 @@ export default class {
     this.centerCamera();
     this.animate();
 
+    if (this.beltMovement) {
+      this.updateBelts();
+    }
+
     this.emitter.emit('render:complete');
+  }
+
+  setBeltMovement(beltMovement) {
+    if (beltMovement == this.beltMovement) return;
+    this.beltMovement = beltMovement;
+
+    if (beltMovement) {
+      this.updateBelts();
+    }
   }
 }
