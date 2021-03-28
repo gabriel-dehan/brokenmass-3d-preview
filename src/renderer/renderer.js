@@ -174,8 +174,10 @@ export default class {
     this.scene.add(this.camera);
 
     this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
       powerPreference: 'high-performance',
     });
+
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(this.rendererWidth, this.rendererHeight);
     this.container.appendChild(this.renderer.domElement);
@@ -418,6 +420,11 @@ export default class {
 
       buildingMesh.position.set(0, 0, 200.2);
       wireframe.position.set(0, 0, 200.2);
+      buildingMesh.matrixAutoUpdate = false;
+      buildingMesh.updateMatrix();
+      wireframe.matrixAutoUpdate = false;
+      wireframe.updateMatrix();
+
       stick.add(buildingMesh);
       stick.add(wireframe);
 
@@ -433,13 +440,19 @@ export default class {
           // ray receivers set recipeId as one when generating photons
           recipeMaterial = this.recipeMaterials[1208];
         }
-        const plane = new THREE.Mesh(recipeGeometry, recipeMaterial);
-        plane.position.set(0, 0, 200.3 + modelData.size[2]);
-        stick.add(plane);
+        const recipePlane = new THREE.Mesh(recipeGeometry, recipeMaterial);
+        recipePlane.position.set(0, 0, 200.3 + modelData.size[2]);
+
+        recipePlane.matrixAutoUpdate = false;
+        recipePlane.updateMatrix();
+        stick.add(recipePlane);
       }
 
       positionsMap[building.originalId] = building.cartesianPosition;
       this.buildings.push(buildingMesh);
+
+      stick.matrixAutoUpdate = false;
+      stick.updateMatrix();
     }
 
     const beltMap = {};
@@ -528,6 +541,9 @@ export default class {
 
       beltsGroup.add(line);
       this.belts.push(line);
+
+      line.matrixAutoUpdate = false;
+      line.updateMatrix();
     }
   }
 
